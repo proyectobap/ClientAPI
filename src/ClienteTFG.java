@@ -28,6 +28,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class ClienteTFG {
@@ -55,6 +57,7 @@ public class ClienteTFG {
     private static boolean pruebaConexion;
     private static JSONObject pregunta;
     private static JSONObject respuesta;
+	private static JSONArray content;
     
 
     public static void main(String[] args) {
@@ -78,6 +81,7 @@ public class ClienteTFG {
             
             System.out.print("Conectando con el servidor... ");
             servidor = new Socket("192.168.1.205",35698);
+            //servidor = new Socket("localhost",35698);
             salida = new ObjectOutputStream(servidor.getOutputStream());
             entrada = new ObjectInputStream(servidor.getInputStream());
             System.out.println("OK");
@@ -129,9 +133,15 @@ public class ClienteTFG {
                 System.out.print("Código respuesta: ... ");
                 respuestaEnc = (String) entrada.readObject();
                 respuesta = new JSONObject(symetricDecript(respuestaEnc));
+                content = new JSONArray();
                 
                 System.out.println(respuesta.getInt("response"));
-                System.out.println(respuesta.toString());
+                
+                content = respuesta.getJSONArray("content");
+                
+                for (int i = 0; i < content.length(); i++) {
+                	System.out.println(content.getJSONObject(i).toString());
+                }
             }
 
             entrada.close();
