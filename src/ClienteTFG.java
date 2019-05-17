@@ -80,8 +80,9 @@ public class ClienteTFG {
             System.out.println("***********************************");
             
             System.out.print("Conectando con el servidor... ");
-            servidor = new Socket("192.168.1.205",35698);
+            //servidor = new Socket("192.168.1.205",35698);
             //servidor = new Socket("localhost",35698);
+            servidor = new Socket("proyectobap.ddns.net",35698);
             salida = new ObjectOutputStream(servidor.getOutputStream());
             entrada = new ObjectInputStream(servidor.getInputStream());
             System.out.println("OK");
