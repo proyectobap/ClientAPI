@@ -121,8 +121,16 @@ public class ClienteTFG {
                 
                 System.out.println("Escribe mensaje (EXIT para terminar): ");
                 
-                pregunta = new JSONObject();
-                pregunta.put("peticion",lector.nextLine().toLowerCase());
+                switch (lector.nextLine().toLowerCase()) {
+                
+                case "newticket":
+                	pregunta = crearTicket();
+                	break;
+                default:
+                	pregunta = new JSONObject();
+                    pregunta.put("peticion",lector.nextLine().toLowerCase());
+                	break;
+                }
                 
                 enviar(symetricEncrypt(pregunta.toString()));
                 
@@ -284,6 +292,21 @@ public class ClienteTFG {
     private static void enviar(Object mensaje) throws IOException {
         salida.writeObject(mensaje);
         salida.flush();
+    }
+    
+/******************************************************************************/
+    
+    private static JSONObject crearTicket() {
+    	JSONObject prueba = new JSONObject();
+    	prueba.put("peticion","newTicket");
+    	prueba.put("title", "Ticket de prueba");
+    	prueba.put("description", "Este ticket es de prueba");
+    	prueba.put("status", 2);
+    	prueba.put("owner", 2);
+    	prueba.put("object", 1);
+    	
+    	return prueba;
+    	
     }
     
 }
