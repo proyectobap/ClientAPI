@@ -121,14 +121,16 @@ public class ClienteTFG {
                 
                 System.out.println("Escribe mensaje (EXIT para terminar): ");
                 
-                switch (lector.nextLine().toLowerCase()) {
+                String peticion = lector.nextLine().toLowerCase();
+                
+                switch (peticion) {
                 
                 case "newticket":
                 	pregunta = crearTicket();
                 	break;
                 default:
                 	pregunta = new JSONObject();
-                    pregunta.put("peticion",lector.nextLine().toLowerCase());
+                    pregunta.put("peticion",peticion);
                 	break;
                 }
                 
