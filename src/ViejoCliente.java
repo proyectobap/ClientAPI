@@ -1,4 +1,3 @@
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -19,6 +18,9 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -29,181 +31,160 @@ import javax.crypto.spec.SecretKeySpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class ClienteTFG implements Runnable {
+public class ViejoCliente {
     
-    private PublicKey publicKey;
-    private PrivateKey privateKey;
-    private RSAPublicKeySpec publicKeySpec;
+    private static PublicKey publicKey;
+    private static PrivateKey privateKey;
+    private static RSAPublicKeySpec publicKeySpec;
     
-    private SecretKey claveSimetricaSecreta;
-    private SecureRandom secureRandom;
-    private byte[] claveSimetrica;
-    private String respuestaEnc;
+    private static SecretKey claveSimetricaSecreta;
+    private static SecureRandom secureRandom;
+    private static byte[] claveSimetrica;
+    private static String respuestaEnc;
     
-    private GCMParameterSpec parameterSpec;
+    private static GCMParameterSpec parameterSpec;
     
-    private PublicKey serverPublicKey;
-    private Cipher cifradorAsimetrico;
-    private Cipher cifradorSimetrico;
+    private static PublicKey serverPublicKey;
+    private static Cipher cifradorAsimetrico;
+    private static Cipher cifradorSimetrico;
     
-    private ObjectOutputStream salida;
-    private ObjectInputStream entrada;
-    private Socket servidor;
+    private static ObjectOutputStream salida;
+    private static ObjectInputStream entrada;
+    private static Socket servidor;
     
-    private JSONObject pregunta;
-    private JSONObject respuesta;
-	private JSONArray content;
-	
-	private String userName = "";
-	private String passWord = "";
-	private String token;    
-	private final Thread conexion;
-	
-	private static ClienteTFG cliente;
-	
-	private ClienteTFG(String userName, String passWord) {
-		this.userName = userName;
-		this.passWord = passWord;
-		conexion = new Thread(this, "nombreDelHilo");
-	}
-	
-	public static void iniciarConexion(String userName, String passWord) {
-		cliente = new ClienteTFG(userName,passWord);
-		cliente.conexion.start();	
-	}
-	
-	public static ClienteTFG getCliente() {
-		return cliente;
-	}
+    private static boolean running;
+    private static boolean pruebaConexion;
+    private static JSONObject pregunta;
+    private static JSONObject respuesta;
+	private static JSONArray content;
+    
 
-	@Override
-	public void run() {
+    public static void main(String[] args) {
 		
-		if (userName.equals("") || passWord.equals("")) {
-			System.out.println("No pueden quedar campos vacíos!");
-			return;
-		}
+        System.out.println("        APLICACIÓN CLIENTE");
+        System.out.println("-----------------------------------");
+        System.out.println("***********************************");
+        
+        running = true;
+        pruebaConexion = true;
+        Scanner lector = new Scanner(System.in);
 
         try {
             
-        	/*
-        	 * Inicializa las claves de cifrado asimétrico y abre una conexión con el servidor 
-        	 */
-        	
             secureRandom = new SecureRandom();
+            
             initializeKey();
+            
+            System.out.println("-----------------------------------");
+            System.out.println("***********************************");
+            
+            System.out.print("Conectando con el servidor... ");
+            //servidor = new Socket("192.168.1.205",35698);
+            //servidor = new Socket("localhost",35698);
             servidor = new Socket("proyectobap.ddns.net",35698);
             salida = new ObjectOutputStream(servidor.getOutputStream());
             entrada = new ObjectInputStream(servidor.getInputStream());
-            
-        } catch (Exception e) {
-        	System.out.println(e.getMessage());
-        }
-        
-        try {
-        	
-        	/*
-        	 * Intercambia las claves con el servidor y hace una prueba de conexión para
-        	 * comprobar la validez de las claves
-        	 */
+            System.out.println("OK");
             
             intercambioClaves();
+            
+            System.out.println("-----------------------------------");
+            System.out.println("***********************************");
+
             cifradorAsimetrico = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cifradorSimetrico = Cipher.getInstance("AES/GCM/NoPadding");
             
-            String check = asymetricDecript((String) entrada.readObject());
-            enviar(asymetricEncrypt(check));
-            
-            if (entrada.readInt() == 206) {
-                System.out.println("Comunicación OK");
-                System.out.print("Recibiendo clave simetrica... ");
-                String claveVolatil = (String)entrada.readObject();
-                claveSimetrica = Base64.getDecoder().decode(claveVolatil.getBytes());
-                inicializacionClaveSimetrica();
-                System.out.println("OK");
-            } else {
-                System.err.println("Comunicación falló");
-                System.exit(0);
+            while (running) {
+                
+                if (pruebaConexion) {
+                    
+                    String check = asymetricDecript((String) entrada.readObject());
+                    enviar(asymetricEncrypt(check));
+                    
+                    if (entrada.readInt() == 206) {
+                        System.out.println("Comunicación OK");
+                        System.out.print("Recibiendo clave simetrica... ");
+                        String claveVolatil = (String)entrada.readObject();
+                        claveSimetrica = Base64.getDecoder().decode(claveVolatil.getBytes());
+                        inicializacionClaveSimetrica();
+                        System.out.println("OK");
+                        System.out.println("-----------------------------------");
+                        System.out.println("***********************************");
+                    } else {
+                        System.err.println("Comunicación falló");
+                        System.exit(0);
+                    }
+                    
+                    pruebaConexion = false;
+                }
+                
+                System.out.println("Escribe mensaje (EXIT para terminar): ");
+                
+                String peticion = lector.nextLine().toLowerCase();
+                
+                switch (peticion) {
+                
+                case "newticket":
+                	pregunta = crearTicket();
+                	break;
+                default:
+                	pregunta = new JSONObject();
+                    pregunta.put("peticion",peticion);
+                	break;
+                }
+                
+                enviar(symetricEncrypt(pregunta.toString()));
+                
+                if (pregunta.getString("peticion").equalsIgnoreCase("exit")) {
+                    System.out.println("Desconectando...");
+                    System.exit(0);
+                }
+                
+                System.out.print("Código respuesta: ... ");
+                respuestaEnc = (String) entrada.readObject();
+                respuesta = new JSONObject(symetricDecript(respuestaEnc));
+                content = new JSONArray();
+                
+                System.out.println(respuesta.getInt("response"));
+                
+                content = respuesta.getJSONArray("content");
+                
+                for (int i = 0; i < content.length(); i++) {
+                	System.out.println(content.getJSONObject(i).toString());
+                }
             }
+
+            entrada.close();
+            salida.close();
+            servidor.close();
             
-            /*
-             * Envía al servidor las credenciales para obtener un token de conexión 
-             * si fuesen validas
-             */
-            
-            enviar(symetricEncrypt(userName+","+passWord));
-            
-            respuestaEnc = (String) entrada.readObject();
-            respuesta = new JSONObject(symetricDecript(respuestaEnc));
-            content = new JSONArray();
-            
-            /*
-             * Si las credenciales son válidas, guarda el token facilitado por el servidor
-             * y continua
-             */
-            
-            if (respuesta.getInt("response") == 200) {
-            	content = respuesta.getJSONArray("content");
-            	token = content.getJSONObject(0).getString("content");
-            } else {
-            	System.err.println("Login incorrecto");
-            	this.cerrarConexion();
-            }
-            
-            
+            System.out.println("Comunicación cerrada");
 
         } catch (UnknownHostException e) {
-            // Controlar
+            System.out.println("No se puede establecer comunicación con el servidor");
+            System.out.println(e.getMessage());
         } catch (IOException e) {
-            // Controlar
+            System.out.println("Error de E/S");
+            System.out.println(e.getMessage());
         } catch (ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            // Controlar
+            Logger.getLogger(ClienteTFG.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
-            // Controlar
+            Logger.getLogger(ClienteTFG.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            lector.close();
+            System.out.println("Desconectado");
         }
-        
     }
-	
-	public void cerrarConexion() throws Exception {
-		entrada.close();
-        salida.close();
-        servidor.close();
-	}
-	
-	public JSONObject peticion(JSONObject peticion) throws Exception {
-		
-		enviar(symetricEncrypt(peticion.toString()));
-        
-        if (pregunta.getString("peticion").equalsIgnoreCase("exit")) {
-            System.out.println("Desconectando...");
-            this.cerrarConexion();
-            System.exit(0);
-        }
-        
-        respuestaEnc = (String) entrada.readObject();
-        return new JSONObject(symetricDecript(respuestaEnc));
-        
-        
-        /*System.out.println(respuesta.getInt("response"));
-        
-        content = new JSONArray();
-        content = respuesta.getJSONArray("content");
-        
-        for (int i = 0; i < content.length(); i++) {
-        	System.out.println(content.getJSONObject(i).toString());
-        }*/
-		
-	}
-	
+    
 /******************************************************************************/        
     
-    private void inicializacionClaveSimetrica() {
+    private static void inicializacionClaveSimetrica() {
         claveSimetricaSecreta = new SecretKeySpec(claveSimetrica, "AES");
     }
     
 /******************************************************************************/    
     
-    public void initializeKey() throws Exception {
+    public static void initializeKey() throws Exception {
         System.out.print("Iniciando generador de claves... ");
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
 	keyPairGenerator.initialize(1024);
@@ -224,7 +205,7 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/    
 
-    private void intercambioClaves() throws 
+    private static void intercambioClaves() throws 
             InvalidKeySpecException, 
             NoSuchAlgorithmException, 
             IOException, 
@@ -247,7 +228,7 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/
 	
-    private String symetricEncrypt(String mensaje) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { 
+    private static String symetricEncrypt(String mensaje) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { 
     	byte[] iv = new byte[12];
     	secureRandom.nextBytes(iv);
     	parameterSpec = new GCMParameterSpec(128, iv);
@@ -265,7 +246,7 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/
     
-    private String symetricDecript(String mensajeCifrado64) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { 
+    private static String symetricDecript(String mensajeCifrado64) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { 
 	byte[] cifMen = Base64.getDecoder().decode(mensajeCifrado64);
         ByteBuffer bf = ByteBuffer.wrap(cifMen);
         int ivLength = bf.getInt();
@@ -284,7 +265,7 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/
     
-    private String asymetricEncrypt(String mensaje) throws 
+    private static String asymetricEncrypt(String mensaje) throws 
             UnsupportedEncodingException, 
             IllegalBlockSizeException, 
             BadPaddingException, 
@@ -297,7 +278,7 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/
     
-    private String asymetricDecript(String mensajeCifrado64) throws 
+    private static String asymetricDecript(String mensajeCifrado64) throws 
             IllegalBlockSizeException, 
             BadPaddingException, 
             InvalidKeyException {
@@ -309,15 +290,24 @@ public class ClienteTFG implements Runnable {
     
 /******************************************************************************/    
     
-    private void enviar(Object mensaje) throws IOException {
+    private static void enviar(Object mensaje) throws IOException {
         salida.writeObject(mensaje);
         salida.flush();
     }
     
 /******************************************************************************/
-
-    public String getToken() {
-    	return token;
+    
+    private static JSONObject crearTicket() {
+    	JSONObject prueba = new JSONObject();
+    	prueba.put("peticion","newTicket");
+    	prueba.put("title", "Ticket de prueba");
+    	prueba.put("description", "Este ticket es de prueba");
+    	prueba.put("status", 2);
+    	prueba.put("owner", 2);
+    	prueba.put("object", 1);
+    	
+    	return prueba;
+    	
     }
     
 }
