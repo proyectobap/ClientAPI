@@ -13,7 +13,6 @@ import java.util.Base64;
 
 import javax.crypto.Cipher;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class ClienteTFG implements Runnable {
@@ -27,7 +26,6 @@ public class ClienteTFG implements Runnable {
     
     private JSONObject pregunta;
     private JSONObject respuesta;
-	private JSONArray content;
 	private JSONObject peticion;
 	
 	private String userName = "";
@@ -110,18 +108,9 @@ public class ClienteTFG implements Runnable {
             
             respuestaEnc = (String) entrada.readObject();
             respuesta = new JSONObject(enc.symetricDecript(respuestaEnc));
-            content = new JSONArray();
             
-            /*
-             * Si las credenciales son válidas, guarda el token facilitado por el servidor
-             * y continua
-             */
-            
-            if (respuesta.getInt("response") == 200) {
-            	content = respuesta.getJSONArray("content");
-            	token = content.getJSONObject(0).getString("content");
-            } else {
-            	System.err.println("Login incorrecto");
+            if (respuesta.getInt("response") == 400) {
+            	System.out.println("Login incorrecto");
             	this.cerrarConexion();
             }
 
@@ -188,7 +177,6 @@ public class ClienteTFG implements Runnable {
         
         respuestaEnc = (String) entrada.readObject();
         return new JSONObject(enc.symetricDecript(respuestaEnc));
-        
         
         /*System.out.println(respuesta.getInt("response"));
         
