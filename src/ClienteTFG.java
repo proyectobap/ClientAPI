@@ -30,8 +30,9 @@ public class ClienteTFG implements Runnable {
 	
 	private String userName = "";
 	private String passWord = "";
-	private String token;    
 	private final Thread conexion;
+	private int retry = 15;
+	public boolean running = true;
 	
 	public ClienteTFG(String userName, String passWord, EncryptModule enc) {
 		this.userName = userName;
@@ -120,28 +121,37 @@ public class ClienteTFG implements Runnable {
         
         /******************************************************************************/
         
-        boolean running = true;
-        
         while (running) {
         	
         	try {
-				Thread.sleep(900000);
+				Thread.sleep(6000);
 			} catch (InterruptedException e) {
 				try {
+					
 					// Esta petición devuelve un JSONObject con la información requerida
 					// Enviadla donde necesitéis para continuar con el programa
+					
 					if (peticion.getString("peticion").equalsIgnoreCase("exit")) {
-						running = false;
+						retry = 0;
+					} else {
+						retry = 15;
 					}
+					
 					peticion(peticion);
+					
+					continue;
 					
 				} catch (Exception e1) {
 					// Controlar
 				}
-				continue;
+				
 			}
-        	System.out.println("Cerrando conexión...");
-			break;
+        	
+        	if (retry > 0) {
+        		retry--;
+        	} else {
+        		break;	        		
+        	}
         	
         }
                 
@@ -158,6 +168,7 @@ public class ClienteTFG implements Runnable {
 	/******************************************************************************/
 	
 	public void cerrarConexion() throws Exception {
+		System.out.println("Cerrando conexión...");
 		servidor.close();
 		salida.close();
 		entrada.close();
@@ -218,12 +229,6 @@ public class ClienteTFG implements Runnable {
     private void enviar(Object mensaje) throws IOException {
         salida.writeObject(mensaje);
         salida.flush();
-    }
-    
-    /******************************************************************************/
-
-    public String getToken() {
-    	return token;
     }
     
 }

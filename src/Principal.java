@@ -24,8 +24,9 @@ public class Principal {
 			String instruccion = lector.nextLine();
 			cliente.setInstruccion(new JSONObject().put("peticion", instruccion));
 			
-			if (instruccion.equalsIgnoreCase("exit")) {
+			if (instruccion.equalsIgnoreCase("exit") || instruccion.equalsIgnoreCase("poweroff")) {
 				System.out.println("Main: Saliendo");
+				cliente.running = false;
 				break;
 			}
 			
