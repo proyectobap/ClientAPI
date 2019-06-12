@@ -180,7 +180,7 @@ public class ClienteTFG implements Runnable {
 		
 		enviar(enc.symetricEncrypt(peticion.toString()));
         
-        if (pregunta.getString("peticion").equalsIgnoreCase("exit")) {
+        if (peticion.getString("peticion").equalsIgnoreCase("exit")) {
             System.out.println("Desconectando...");
             this.cerrarConexion();
             System.exit(0);
