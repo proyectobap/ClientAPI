@@ -24,7 +24,6 @@ public class ClienteTFG implements Runnable {
     private ObjectInputStream entrada;
     private Socket servidor;
     
-    private JSONObject pregunta;
     private JSONObject respuesta;
 	private JSONObject peticion;
 	
