@@ -123,7 +123,7 @@ public class ClienteTFG implements Runnable {
         while (running) {
         	
         	try {
-				Thread.sleep(6000);
+				Thread.sleep(60000);
 			} catch (InterruptedException e) {
 				try {
 					

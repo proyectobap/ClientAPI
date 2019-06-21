@@ -16,7 +16,7 @@ public class Principal {
 		Scanner lector = new Scanner(System.in);
 		
 		enc = new EncryptModule();
-		cliente = new ClienteTFG("pedro","petete", enc);
+		cliente = new ClienteTFG("kaienu","oxgnub", enc);
 		cliente.getHilo().start();
 		
 		while (true) {
