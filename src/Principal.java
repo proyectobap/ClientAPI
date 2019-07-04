@@ -5,7 +5,7 @@ import org.json.JSONObject;
 public class Principal {
 	
 	/**
-	 * Esta clase es solo un ejemplo de funcionamiento. Se tiene que adaptar para cada software particular.
+	 * Esta aplicación es solo un ejemplo de funcionamiento. Se tiene que adaptar para cada software particular.
 	 */
 
 	private static ClienteTFG cliente;

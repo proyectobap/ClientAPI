@@ -122,6 +122,15 @@ public class ClienteTFG implements Runnable {
         
         while (running) {
         	
+        	/*
+        	 * La forma de trabajar del cliente sería iniciar el hilo, y para que no se cierre cuando no se use,
+        	 * se pondría a dormir (sleep). Cada minuto sin usarse hará una comprobación. A las 15 comprobaciones
+        	 * el hilo se cerrará por desuso.
+        	 * Cuando el cliente interrumpa el sueño con una petición al servidor, se captura la excepción y se 
+        	 * procede a la ejecución del envío, para después del mismo, ponerlo a dormir de nuevo, reseteando el
+        	 * contador de comprobaciones. 
+        	 */
+        	
         	try {
 				Thread.sleep(60000);
 			} catch (InterruptedException e) {
@@ -187,15 +196,6 @@ public class ClienteTFG implements Runnable {
         
         respuestaEnc = (String) entrada.readObject();
         return new JSONObject(enc.symetricDecript(respuestaEnc));
-        
-        /*System.out.println(respuesta.getInt("response"));
-        
-        content = new JSONArray();
-        content = respuesta.getJSONArray("content");
-        
-        for (int i = 0; i < content.length(); i++) {
-        	System.out.println(content.getJSONObject(i).toString());
-        }*/
 		
 	}
 	
